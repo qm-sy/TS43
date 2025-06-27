@@ -1,0 +1,10 @@
+{
+    "files.exclude": {
+        "**/.vscode": true
+    },
+    "files.associations": {
+        "eeprom_crl.h": "c",
+        "gpio.h": "c",
+        "ntc.h": "c"
+    }
+}

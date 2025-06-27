@@ -1,0 +1,123 @@
+C51 COMPILER V9.60.7.0   DHT11                                                             06/27/2025 11:39:28 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE DHT11
+OBJECT MODULE PLACED IN ..\Output\dht11.obj
+COMPILER INVOKED BY: D:\APP\Keil_v5\C51\BIN\C51.EXE ..\BSP\Src\dht11.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(..\BSP\Inc;
+                    -..\Core\Inc;..\Driver;..\Emembed\Inc;..\SYSTEM\Inc) DEBUG OBJECTEXTEND PRINT(.\Listings\dht11.lst) OBJECT(..\Output\dht1
+                    -1.obj)
+
+line level    source
+
+   1          #include  "dht11.h" 
+   2          
+   3          DHT11 dht11;
+   4          
+   5          /**
+   6           * @brief       从DHT11读取一个字节，MSB先行
+   7           *
+   8           * @param   
+   9           *
+  10           * @return  读取的字节
+  11          **/
+  12          static uint8_t Read_Byte(void)  
+  13          {       
+  14   1              uint8_t i, dat = 0;
+  15   1      
+  16   1              for( i = 0; i < 8; i++ )    
+  17   1              {          
+  18   2                      while(!Temp_Hum); //每bit以50us低电平标置开始，轮询直到从机发出 的50us 低电平 结�
+             -��
+  19   2      
+  20   2                      delay_us(40); //延时约40us,这个延时需要大于数据0持续的时间即可                
+  21   2      
+  22   2              if(Temp_Hum)   //约40us后仍为高电平表示数据“1”
+  23   2                      {
+  24   3                              while(Temp_Hum);  //等待数据1的高电平结束
+  25   3                              dat|=(uint8_t)(0x01<<(7-i));  //把第7-i位置1，MSB先行 
+  26   3                      }
+  27   2                      else     //40us后为低电平表示数据“0”
+  28   2                      {                          
+  29   3                              dat&=(uint8_t)~(0x01<<(7-i)); //把第7-i位置0，MSB先行
+  30   3                      }
+  31   2              }
+  32   1              return dat;     
+  33   1      }
+  34          
+  35          /**
+  36           * @brief       DHT11读取开始 时序变化
+  37           *
+  38           * @param   
+  39           *
+  40           * @return  读取的字节
+  41          **/
+  42          void DHT11_start()
+  43          {
+  44   1          Temp_Hum = 1;
+  45   1          delay_us(2);
+  46   1      
+  47   1          Temp_Hum = 0;
+  48   1          delay_ms(30);   //拉低延时18ms以上
+  49   1      
+  50   1          Temp_Hum = 1;
+  51   1          delay_us(30);   //拉高 延时 20~40us，取中间值 30us
+  52   1      }
+C51 COMPILER V9.60.7.0   DHT11                                                             06/27/2025 11:39:28 PAGE 2   
+
+  53          
+  54          /**
+  55           * @brief       读取温湿度
+  56           *
+  57           * @param   
+  58           *
+  59           * @return  读取的字节
+  60          **/
+  61          void Read_DHT11(void)       
+  62          {
+  63   1          uint8_t R_H,R_L,T_H,T_L,revise; 
+  64   1      
+  65   1          DHT11_start();
+  66   1              
+  67   1          /* 1, 判断从机是否有低电平响应信号 如不响应则跳出，响应则向下运行   */
+  68   1          if(!Temp_Hum)      
+  69   1          {
+  70   2              /* 2, 轮询直到从机发出的83us 低电平 响应信号结束   */
+  71   2              while(!Temp_Hum);  
+  72   2      
+  73   2              /* 3, 轮询直到从机发出的87us 高电平 标置信号结束   */
+  74   2              while(Temp_Hum);    
+  75   2                              
+  76   2                      /* 4, 开始接收数据                                */       
+  77   2              R_H= Read_Byte();
+  78   2              R_L= Read_Byte();
+  79   2              T_H= Read_Byte();
+  80   2              T_L= Read_Byte();
+  81   2      
+  82   2              revise = Read_Byte();
+  83   2      
+  84   2              /* 5, 读取结束，主机拉高                          */    
+  85   2              Temp_Hum =1 ;                   
+  86   2      
+  87   2              /* 6, 最后一字节为校验位，校验是否正确            */
+  88   2              if( (R_H+R_L+T_H+T_L) == revise )      //
+  89   2              {
+  90   3                  /* 7, 校验正确，为结构体赋值                  */
+  91   3                  dht11.dht11_temp  = T_H;
+  92   3                  dht11.dht11_humidity = R_H;
+  93   3              }
+  94   2          } 
+  95   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    229    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      3       6
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
